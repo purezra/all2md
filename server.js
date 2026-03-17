@@ -27,27 +27,32 @@ app.get("/api/health", async (_req, res) => {
 });
 
 async function handleExtract(req, res) {
-  const url = (req.method === "GET" ? req.query.url : req.body.url);
-  if (!url || typeof url !== "string") {
-    return res.status(400).json({ error: "请提供有效的文章链接" });
+  const input = req.method === "GET"
+    ? (req.query.url || req.query.input)
+    : (req.body.url || req.body.input || req.body.text);
+  const platformHint = req.method === "GET" ? req.query.platformHint : req.body.platformHint;
+
+  if (!input || typeof input !== "string") {
+    return res.status(400).json({ error: "请提供有效的文章链接或分享文本" });
   }
 
   try {
     const startedAt = Date.now();
-    console.log(`[convert:start] ${url}`);
-    const result = await convertArticle(url.trim());
-    console.log(`[convert:done] ${url} (${Date.now() - startedAt}ms)`);
+    console.log(`[convert:start] ${input}`);
+    const result = await convertArticle(input.trim(), platformHint);
+    console.log(`[convert:done] ${input} (${Date.now() - startedAt}ms)`);
     res.json({
       ok: true,
-      url: url.trim(),
+      input: input.trim(),
       title: result.title,
       platform: result.platform,
       markdown: result.markdown,
       zipMarkdown: result.zipMarkdown,
+      previewMarkdown: result.zipMarkdown || result.markdown,
       assets: result.assets || []
     });
   } catch (err) {
-    console.error(`[convert:error] ${url}`, err);
+    console.error(`[convert:error] ${input}`, err);
     res.status(500).json({ error: err.message || "转换失败，请检查链接是否有效" });
   }
 }
