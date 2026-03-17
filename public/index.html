@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文章转 Markdown</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f8fa; margin: 0; padding: 0; min-height: 100vh;
+    }
+    header {
+      background: #fff; border-bottom: 1px solid #d0d7de;
+      padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 20px; font-weight: 700; color: #24292f; }
+    header span { font-size: 13px; color: #57606a; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+    .input-card {
+      background: #fff; border: 1px solid #d0d7de; border-radius: 10px;
+      padding: 20px 24px; margin-bottom: 20px;
+    }
+    .health-card {
+      background: #fff; border: 1px solid #d0d7de; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+    .health-title { font-size: 13px; color: #57606a; font-weight: 600; }
+    .health-meta { font-size: 13px; color: #57606a; }
+    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .input-row input {
+      flex: 1; min-width: 260px; padding: 10px 14px;
+      border: 1px solid #d0d7de; border-radius: 8px;
+      font-size: 15px; outline: none; transition: border .2s;
+    }
+    .input-row input:focus { border-color: #0969da; box-shadow: 0 0 0 3px #dbeafe; }
+    .btn {
+      padding: 10px 22px; border: none; border-radius: 8px; font-size: 15px;
+      cursor: pointer; font-weight: 600; transition: opacity .15s;
+    }
+    .btn:active { opacity: .75; }
+    .btn-primary { background: #0969da; color: #fff; }
+    .btn-green  { background: #1a7f37; color: #fff; }
+    .btn-gray   { background: #e6eaf0; color: #24292f; }
+    .tabs { display: flex; gap: 2px; margin-bottom: 0; }
+    .tab {
+      padding: 8px 20px; border-radius: 8px 8px 0 0; font-size: 14px;
+      cursor: pointer; background: #e6eaf0; color: #57606a; border: 1px solid #d0d7de; border-bottom: none;
+    }
+    .tab.active { background: #fff; color: #0969da; font-weight: 600; }
+    .result-card {
+      background: #fff; border: 1px solid #d0d7de; border-radius: 0 10px 10px 10px;
+      padding: 0; overflow: hidden;
+    }
+    .toolbar {
+      background: #f6f8fa; border-bottom: 1px solid #d0d7de;
+      padding: 10px 16px; display: flex; gap: 8px; align-items: center;
+    }
+    .toolbar span { font-size: 13px; color: #57606a; margin-left: auto; }
+    #md-source {
+      width: 100%; min-height: 500px; padding: 20px 24px;
+      font-family: "SFMono-Regular", Consolas, monospace; font-size: 13.5px;
+      border: none; resize: vertical; outline: none; line-height: 1.7;
+      color: #24292f; background: #fff;
+    }
+    .preview-wrap {
+      padding: 24px 28px; min-height: 500px;
+      display: none;
+    }
+    .markdown-body { max-width: 800px; }
+    #status {
+      display: none; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;
+      font-size: 14px; font-weight: 500;
+    }
+    .status-loading { background: #dbeafe; color: #1e40af; display: flex !important; align-items: center; gap: 8px; }
+    .status-error   { background: #fde8e8; color: #b91c1c; display: block !important; }
+    .spinner {
+      width: 18px; height: 18px; border: 3px solid #93c5fd;
+      border-top-color: #1d4ed8; border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+    .tag {
+      display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px;
+      font-weight: 600; margin-left: 8px;
+    }
+    .tag-wechat { background: #d1fae5; color: #065f46; }
+    .tag-zhihu  { background: #dbeafe; color: #1e3a8a; }
+    .tag-ok     { background: #dcfce7; color: #166534; }
+    .tag-bad    { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="#0969da"><path d="M14.85 3a1 1 0 0 1 .9.57l.06.16L19 14H5l3.2-10.27A1 1 0 0 1 9.14 3h5.71zM12 17a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
+  <h1>文章转 Markdown</h1>
+  <span>支持微信公众号 · 知乎专栏 · 知乎回答</span>
+</header>
+
+<div class="container">
+  <div class="health-card">
+    <span class="health-title">浏览器状态</span>
+    <span id="health-badge" class="tag">检测中</span>
+    <span id="health-meta" class="health-meta">正在检查服务端浏览器连接…</span>
+    <button class="btn btn-gray" type="button" onclick="refreshHealth()">刷新状态</button>
+  </div>
+
+  <div class="input-card">
+    <div class="input-row">
+      <input id="url-input" type="url" placeholder="粘贴微信公众号或知乎文章链接…" autocomplete="off" />
+      <button class="btn btn-primary" onclick="convert()">🚀 开始转换</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="result-section" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <div class="tabs">
+        <div class="tab active" id="tab-raw" onclick="switchTab('raw')">Markdown 源码</div>
+        <div class="tab" id="tab-preview" onclick="switchTab('preview')">预览</div>
+      </div>
+      <span id="article-title" style="font-size:14px;color:#57606a;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    </div>
+    <div class="result-card">
+      <div class="toolbar">
+        <button class="btn btn-gray" onclick="copyMd()">📋 复制 Markdown</button>
+        <button class="btn btn-green" onclick="downloadMd()">⬇️ 下载 .md 文件</button>
+        <button class="btn btn-green" onclick="downloadZip()">🗜️ 下载 ZIP（md + images）</button>
+        <button class="btn btn-gray" onclick="reset()">🔄 重新转换</button>
+        <span id="char-count"></span>
+      </div>
+      <textarea id="md-source" spellcheck="false"></textarea>
+      <div class="preview-wrap markdown-body" id="preview-area"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script>
+  let currentTitle = "article";
+  let currentPlatform = "";
+  let currentZipMarkdown = "";
+  let currentAssets = [];
+
+  const input = document.getElementById("url-input");
+  input.addEventListener("keydown", e => { if (e.key === "Enter") convert(); });
+  refreshHealth();
+
+  async function convert() {
+    const url = input.value.trim();
+    if (!url) { alert("请先粘贴文章链接"); return; }
+
+    showStatus("loading", "正在抓取文章，请稍候（首次启动约 10~30 秒）…");
+    document.getElementById("result-section").classList.add("hidden");
+
+    try {
+      const res = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "转换失败");
+
+      currentTitle = data.title || "article";
+      currentPlatform = data.platform || "";
+      currentZipMarkdown = data.zipMarkdown || data.markdown || "";
+      currentAssets = Array.isArray(data.assets) ? data.assets : [];
+      document.getElementById("article-title").innerHTML =
+        currentTitle + `<span class="tag tag-${currentPlatform}">${currentPlatform === "wechat" ? "微信" : "知乎"}</span>`;
+
+      const mdArea = document.getElementById("md-source");
+      mdArea.value = data.markdown;
+      document.getElementById("char-count").textContent = `共 ${data.markdown.length.toLocaleString()} 字符`;
+
+      hideStatus();
+      document.getElementById("result-section").classList.remove("hidden");
+      switchTab("raw");
+    } catch (err) {
+      showStatus("error", "❌ " + err.message);
+    }
+  }
+
+  async function refreshHealth() {
+    const badge = document.getElementById("health-badge");
+    const meta = document.getElementById("health-meta");
+    badge.className = "tag";
+    badge.textContent = "检测中";
+    meta.textContent = "正在检查服务端浏览器连接…";
+
+    try {
+      const res = await fetch("/api/health");
+      const data = await res.json();
+      if (!res.ok || !data.browser) throw new Error("健康检查失败");
+
+      const browser = data.browser;
+      badge.classList.add(browser.ok ? "tag-ok" : "tag-bad");
+      badge.textContent = browser.ok ? "已就绪" : "不可用";
+
+      if (browser.ok) {
+        const modeMap = { remote: "远程调试", managed: "服务托管", disconnected: "未连接" };
+        const mode = modeMap[browser.mode] || browser.mode;
+        const detail = [
+          `模式：${mode}`,
+          `无头：${browser.headless === false ? "否" : "是"}`,
+          browser.wsConfigured ? "已配置远程 Chrome" : "未配置远程 Chrome",
+          browser.userDataDir ? `Profile：${browser.userDataDir}` : ""
+        ].filter(Boolean).join(" · ");
+        meta.textContent = detail;
+      } else {
+        meta.textContent = browser.error || "浏览器未就绪";
+      }
+    } catch (err) {
+      badge.classList.add("tag-bad");
+      badge.textContent = "不可用";
+      meta.textContent = err.message || "健康检查失败";
+    }
+  }
+
+  function switchTab(tab) {
+    const rawEl = document.getElementById("md-source");
+    const preEl = document.getElementById("preview-area");
+    document.getElementById("tab-raw").classList.toggle("active", tab === "raw");
+    document.getElementById("tab-preview").classList.toggle("active", tab === "preview");
+    if (tab === "raw") {
+      rawEl.style.display = "block";
+      preEl.style.display = "none";
+    } else {
+      rawEl.style.display = "none";
+      preEl.style.display = "block";
+      preEl.innerHTML = marked.parse(rawEl.value);
+    }
+  }
+
+  async function copyMd() {
+    const text = document.getElementById("md-source").value;
+    await navigator.clipboard.writeText(text);
+    alert("✅ 已复制到剪贴板");
+  }
+
+  async function downloadMd() {
+    const markdown = document.getElementById("md-source").value;
+    const res = await fetch("/api/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markdown, filename: currentTitle })
+    });
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = currentTitle + ".md";
+    a.click();
+  }
+
+  async function downloadZip() {
+    const markdown = currentZipMarkdown || document.getElementById("md-source").value;
+    const res = await fetch("/api/download-zip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ markdown, filename: currentTitle, assets: currentAssets })
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "下载 ZIP 失败");
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = currentTitle + ".zip";
+    a.click();
+  }
+
+  function reset() {
+    input.value = "";
+    currentZipMarkdown = "";
+    currentAssets = [];
+    document.getElementById("result-section").classList.add("hidden");
+    hideStatus();
+    input.focus();
+  }
+
+  function showStatus(type, msg) {
+    const el = document.getElementById("status");
+    el.className = "";
+    if (type === "loading") {
+      el.classList.add("status-loading");
+      el.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+    } else {
+      el.classList.add("status-error");
+      el.textContent = msg;
+    }
+    el.style.display = type === "loading" ? "flex" : "block";
+  }
+
+  function hideStatus() {
+    document.getElementById("status").style.display = "none";
+  }
+</script>
+</body>
+</html>
