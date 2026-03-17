@@ -4,134 +4,773 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>文章转 Markdown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <style>
+    :root {
+      --bg: #f4efe6;
+      --bg-soft: #efe7da;
+      --paper: rgba(255, 251, 245, 0.92);
+      --paper-strong: #fffdf8;
+      --ink: #1b1916;
+      --muted: #6f685d;
+      --line: rgba(48, 40, 31, 0.14);
+      --line-strong: rgba(48, 40, 31, 0.28);
+      --accent: #b84c2a;
+      --accent-dark: #8f2f12;
+      --accent-soft: rgba(184, 76, 42, 0.14);
+      --accent-alt: #0f766e;
+      --shadow: 0 28px 70px rgba(58, 44, 22, 0.14);
+      --mono: "IBM Plex Mono", Consolas, monospace;
+      --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+      --serif: "Noto Serif SC", "Songti SC", serif;
+    }
     *, *::before, *::after { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f6f8fa; margin: 0; padding: 0; min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(184, 76, 42, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 26%),
+        linear-gradient(180deg, #f8f3eb 0%, var(--bg) 58%, #ece3d5 100%);
+      margin: 0;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(120, 108, 90, 0.06) 1px, transparent 1px);
+      background-size: 100% 30px;
+      opacity: 0.35;
     }
     header {
-      background: #fff; border-bottom: 1px solid #d0d7de;
-      padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 42px 20px 18px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+      align-items: end;
     }
-    header h1 { margin: 0; font-size: 20px; font-weight: 700; color: #24292f; }
-    header span { font-size: 13px; color: #57606a; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+    .hero-card,
+    .health-card,
+    .input-card,
+    .result-card {
+      backdrop-filter: blur(18px);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .hero-card {
+      padding: 26px 28px 30px;
+      border-radius: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -42px;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(184, 76, 42, 0.2), transparent 68%);
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+      border: 1px solid rgba(184, 76, 42, 0.16);
+    }
+    .hero-title {
+      margin: 18px 0 10px;
+      font-family: var(--serif);
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.02;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+    .hero-subtitle {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+    .hero-metrics {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+    .metric {
+      min-width: 150px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.54);
+      border: 1px solid rgba(48, 40, 31, 0.08);
+    }
+    .metric strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 4px 20px 36px;
+    }
     .input-card {
-      background: #fff; border: 1px solid #d0d7de; border-radius: 10px;
-      padding: 20px 24px; margin-bottom: 20px;
+      padding: 24px 24px 26px;
+      margin-bottom: 20px;
+      border-radius: 28px;
+    }
+    .section-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .input-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      align-items: end;
+    }
+    .input-top p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 700px;
+      line-height: 1.7;
     }
     .health-card {
-      background: #fff; border: 1px solid #d0d7de; border-radius: 10px;
-      padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+      padding: 18px 20px;
+      margin-bottom: 18px;
+      border-radius: 28px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .health-title { font-size: 13px; color: #57606a; font-weight: 600; }
-    .health-meta { font-size: 13px; color: #57606a; }
-    .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
-    .platform-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .health-title {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .health-meta { font-size: 13px; color: var(--muted); }
+    .input-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; }
+    .platform-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
     .platform-chip {
-      border: 1px solid #d0d7de; background: #f6f8fa; color: #57606a;
-      padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: all .15s ease;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.54);
+      color: var(--muted);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .18s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
     }
-    .platform-chip.active { background: #0969da; color: #fff; border-color: #0969da; }
+    .platform-chip:hover { transform: translateY(-1px); border-color: rgba(184, 76, 42, 0.34); }
+    .platform-chip.active {
+      background: linear-gradient(135deg, var(--accent), #d36b43);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 14px 30px rgba(184, 76, 42, 0.22);
+    }
     .input-row input {
-      flex: 1; min-width: 260px; padding: 10px 14px;
-      border: 1px solid #d0d7de; border-radius: 8px;
-      font-size: 15px; outline: none; transition: border .2s;
+      flex: 1;
+      min-width: 260px;
+      min-height: 58px;
+      padding: 18px 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      font-size: 15px;
+      outline: none;
+      transition: border .2s, box-shadow .2s, transform .2s;
+      background: rgba(255,255,255,0.72);
+      color: var(--ink);
     }
-    .input-row input:focus { border-color: #0969da; box-shadow: 0 0 0 3px #dbeafe; }
+    .input-row input:focus {
+      border-color: rgba(184, 76, 42, 0.42);
+      box-shadow: 0 0 0 5px rgba(184, 76, 42, 0.12);
+      transform: translateY(-1px);
+    }
+    .input-note {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .example-chip {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px dashed rgba(48, 40, 31, 0.16);
+      background: rgba(255,255,255,0.5);
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+    .example-chip:hover {
+      border-color: rgba(184, 76, 42, 0.34);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
     .btn {
-      padding: 10px 22px; border: none; border-radius: 8px; font-size: 15px;
-      cursor: pointer; font-weight: 600; transition: opacity .15s;
+      padding: 13px 20px;
+      border: none;
+      border-radius: 16px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: .01em;
+      transition: transform .15s ease, box-shadow .15s ease, opacity .15s;
+      font-family: var(--sans);
     }
-    .btn:active { opacity: .75; }
-    .btn-primary { background: #0969da; color: #fff; }
-    .btn-green  { background: #1a7f37; color: #fff; }
-    .btn-gray   { background: #e6eaf0; color: #24292f; }
-    .tabs { display: flex; gap: 2px; margin-bottom: 0; }
-    .tab {
-      padding: 8px 20px; border-radius: 8px 8px 0 0; font-size: 14px;
-      cursor: pointer; background: #e6eaf0; color: #57606a; border: 1px solid #d0d7de; border-bottom: none;
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { opacity: .75; transform: translateY(0); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #d36b43);
+      color: #fff;
+      box-shadow: 0 20px 36px rgba(184, 76, 42, 0.22);
     }
-    .tab.active { background: #fff; color: #0969da; font-weight: 600; }
+    .btn-green  {
+      background: linear-gradient(135deg, #166d5e, var(--accent-alt));
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(15, 118, 110, 0.18);
+    }
+    .btn-gray   {
+      background: rgba(255,255,255,0.74);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
     .result-card {
-      background: #fff; border: 1px solid #d0d7de; border-radius: 0 10px 10px 10px;
-      padding: 0; overflow: hidden;
+      border-radius: 30px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .result-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 0 4px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .result-meta strong {
+      display: block;
+      font-family: var(--serif);
+      font-size: clamp(22px, 3vw, 32px);
+      line-height: 1.15;
+      color: var(--ink);
+      letter-spacing: -0.03em;
+      max-width: 900px;
+    }
+    .result-meta span {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
     .toolbar {
-      background: #f6f8fa; border-bottom: 1px solid #d0d7de;
-      padding: 10px 16px; display: flex; gap: 8px; align-items: center;
+      background: linear-gradient(180deg, rgba(239, 231, 218, 0.78), rgba(248, 243, 235, 0.72));
+      border-bottom: 1px solid var(--line);
+      padding: 14px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
     }
-    .toolbar span { font-size: 13px; color: #57606a; margin-left: auto; }
+    .toolbar span {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .mini-btn {
+      padding: 9px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.72);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(184, 76, 42, 0.24);
+      background: rgba(255,255,255,0.95);
+    }
     .split-view {
-      display: grid; grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
       min-height: 500px;
     }
     .panel { min-width: 0; }
-    .panel + .panel { border-left: 1px solid #d0d7de; }
+    .panel + .panel { border-left: 1px solid var(--line); }
     .panel-head {
-      padding: 10px 16px; font-size: 13px; font-weight: 700; color: #57606a;
-      background: #f6f8fa; border-bottom: 1px solid #d0d7de;
+      padding: 12px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      background: rgba(246, 239, 228, 0.68);
+      border-bottom: 1px solid var(--line);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .panel-subhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.42);
+    }
+    .panel-subhead span {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
+    .outline-toggle {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.72);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
     }
     #md-source {
-      width: 100%; min-height: 450px; padding: 20px 24px;
-      font-family: "SFMono-Regular", Consolas, monospace; font-size: 13.5px;
-      border: none; resize: vertical; outline: none; line-height: 1.7;
-      color: #24292f; background: #fff;
+      width: 100%;
+      min-height: 460px;
+      padding: 22px 24px;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      border: none;
+      resize: vertical;
+      outline: none;
+      line-height: 1.72;
+      color: #26221d;
+      background: rgba(255, 252, 246, 0.94);
     }
     .preview-wrap {
-      padding: 24px 28px; min-height: 450px;
+      padding: 24px 28px;
+      min-height: 460px;
       display: block;
+      background: rgba(255, 253, 248, 0.88);
     }
-    .markdown-body { max-width: 800px; }
+    .preview-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      min-height: 460px;
+    }
+    .preview-main {
+      min-width: 0;
+      border-right: 1px solid var(--line);
+    }
+    .outline-rail {
+      background: rgba(250, 244, 235, 0.72);
+      padding: 18px 16px;
+      overflow: auto;
+    }
+    .outline-title {
+      margin-bottom: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .outline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .outline-empty {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .outline-link {
+      display: block;
+      padding: 7px 10px;
+      border-radius: 12px;
+      color: #564f45;
+      text-decoration: none;
+      font-size: 12px;
+      line-height: 1.45;
+      transition: background .16s ease, color .16s ease, transform .16s ease;
+    }
+    .outline-link:hover {
+      background: rgba(184, 76, 42, 0.1);
+      color: var(--accent-dark);
+      transform: translateX(2px);
+    }
+    .outline-link.level-2 { padding-left: 18px; }
+    .outline-link.level-3 { padding-left: 26px; }
+    .outline-link.active {
+      background: rgba(184, 76, 42, 0.14);
+      color: var(--accent-dark);
+      font-weight: 700;
+    }
+    .copy-flash {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(27, 25, 22, 0.92);
+      color: #fff;
+      box-shadow: 0 20px 40px rgba(27, 25, 22, 0.25);
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .copy-flash.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .markdown-body {
+      max-width: 860px;
+      color: #26221d;
+      font-family: var(--sans);
+      line-height: 1.9;
+    }
+    .markdown-body h1,
+    .markdown-body h2,
+    .markdown-body h3 {
+      font-family: var(--serif);
+      letter-spacing: -0.03em;
+    }
+    .markdown-body h1 {
+      font-size: clamp(34px, 4vw, 50px);
+      line-height: 1.06;
+      margin-bottom: 18px;
+    }
+    .markdown-body h2 {
+      font-size: clamp(24px, 2.8vw, 32px);
+      margin-top: 2em;
+      margin-bottom: .8em;
+    }
+    .markdown-body h3 {
+      font-size: 20px;
+      margin-top: 1.6em;
+      margin-bottom: .65em;
+    }
+    .markdown-body p,
+    .markdown-body li {
+      font-size: 16px;
+      line-height: 1.95;
+    }
+    .markdown-body hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(48, 40, 31, 0.16), transparent);
+      margin: 2em 0;
+    }
+    .markdown-body blockquote {
+      border-left: 4px solid var(--accent);
+      background: rgba(184, 76, 42, 0.08);
+      padding: 10px 14px;
+      border-radius: 0 14px 14px 0;
+      margin: 1.6em 0;
+    }
+    .markdown-body .callout {
+      border: 1px solid rgba(48, 40, 31, 0.1);
+      border-left-width: 5px;
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin: 1.6em 0;
+      background: rgba(255,255,255,0.68);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.75);
+    }
+    .markdown-body .callout-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .markdown-body .callout-body > :first-child { margin-top: 0; }
+    .markdown-body .callout-body > :last-child { margin-bottom: 0; }
+    .markdown-body .callout-note { border-left-color: #6b7280; background: rgba(107, 114, 128, 0.08); }
+    .markdown-body .callout-note .callout-title { color: #4b5563; }
+    .markdown-body .callout-tip { border-left-color: #0f766e; background: rgba(15, 118, 110, 0.08); }
+    .markdown-body .callout-tip .callout-title { color: #115e59; }
+    .markdown-body .callout-info { border-left-color: #1d4ed8; background: rgba(29, 78, 216, 0.08); }
+    .markdown-body .callout-info .callout-title { color: #1d4ed8; }
+    .markdown-body .callout-warning { border-left-color: #b45309; background: rgba(180, 83, 9, 0.1); }
+    .markdown-body .callout-warning .callout-title { color: #92400e; }
+    .markdown-body pre,
+    .markdown-body code {
+      font-family: var(--mono);
+    }
+    .markdown-body pre {
+      border-radius: 18px;
+      border: 1px solid rgba(48, 40, 31, 0.1);
+      background: #fff9f1;
+      padding: 16px 18px;
+      overflow: auto;
+    }
+    .markdown-body table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .markdown-body table th,
+    .markdown-body table td {
+      border: 1px solid rgba(48, 40, 31, 0.12);
+      padding: 10px 12px;
+    }
+    .markdown-body table th {
+      background: rgba(239, 231, 218, 0.6);
+      font-weight: 700;
+    }
     .preview-wrap img { max-width: 100%; height: auto; }
+    .preview-wrap .article-image {
+      cursor: zoom-in;
+      border-radius: 18px;
+      box-shadow: 0 12px 24px rgba(48, 40, 31, 0.12);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .preview-wrap .article-image:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 32px rgba(48, 40, 31, 0.18);
+    }
+    .preview-wrap .katex-display {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 10px 2px;
+    }
+    .preview-wrap .preview-fade {
+      animation: previewFade .24s ease;
+    }
+    @keyframes previewFade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: min(1200px, 92vw);
+      max-height: 88vh;
+      border-radius: 22px;
+      box-shadow: 0 32px 90px rgba(0, 0, 0, 0.35);
+      background: #fff;
+    }
+    .lightbox button {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+    }
     @media (max-width: 900px) {
       .split-view { grid-template-columns: 1fr; }
-      .panel + .panel { border-left: none; border-top: 1px solid #d0d7de; }
+      .panel + .panel { border-left: none; border-top: 1px solid var(--line); }
+      .preview-shell { grid-template-columns: 1fr; }
+      .preview-main { border-right: none; }
+      .outline-rail { border-top: 1px solid var(--line); }
     }
     #status {
-      display: none; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;
-      font-size: 14px; font-weight: 500;
+      display: none;
+      padding: 15px 18px;
+      border-radius: 18px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      backdrop-filter: blur(12px);
+      border: 1px solid transparent;
     }
-    .status-loading { background: #dbeafe; color: #1e40af; display: flex !important; align-items: center; gap: 8px; }
-    .status-error   { background: #fde8e8; color: #b91c1c; display: block !important; }
+    .status-loading {
+      background: rgba(255, 243, 223, 0.92);
+      color: #7b3d1f;
+      border-color: rgba(184, 76, 42, 0.18);
+      display: flex !important;
+      align-items: center;
+      gap: 10px;
+    }
+    .status-error   {
+      background: rgba(255, 232, 232, 0.94);
+      color: #9a2424;
+      border-color: rgba(185, 28, 28, 0.16);
+      display: block !important;
+    }
     .spinner {
-      width: 18px; height: 18px; border: 3px solid #93c5fd;
-      border-top-color: #1d4ed8; border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      border: 3px solid rgba(184, 76, 42, 0.22);
+      border-top-color: var(--accent);
+      border-radius: 50%;
       animation: spin .7s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none !important; }
     .tag {
-      display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 12px;
-      font-weight: 600; margin-left: 8px;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 8px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
     }
-    .tag-wechat { background: #d1fae5; color: #065f46; }
-    .tag-zhihu  { background: #dbeafe; color: #1e3a8a; }
-    .tag-toutiao { background: #fee2e2; color: #b91c1c; }
-    .tag-ok     { background: #dcfce7; color: #166534; }
-    .tag-bad    { background: #fee2e2; color: #991b1b; }
+    .tag-wechat { background: rgba(22, 101, 52, 0.12); color: #166534; }
+    .tag-zhihu  { background: rgba(30, 58, 138, 0.1); color: #1e3a8a; }
+    .tag-toutiao { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
+    .tag-ok     { background: rgba(22, 101, 52, 0.12); color: #166534; }
+    .tag-bad    { background: rgba(185, 28, 28, 0.12); color: #991b1b; }
+    @media (max-width: 1040px) {
+      header {
+        grid-template-columns: 1fr;
+        padding-top: 26px;
+      }
+    }
+    @media (max-width: 720px) {
+      .container,
+      header {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .hero-card,
+      .input-card,
+      .health-card,
+      .result-card {
+        border-radius: 22px;
+      }
+      .toolbar {
+        align-items: stretch;
+      }
+      .toolbar span {
+        width: 100%;
+        margin-left: 0;
+      }
+      .btn {
+        width: 100%;
+      }
+      .input-top,
+      .result-meta {
+        display: block;
+      }
+      .result-meta strong {
+        margin-top: 8px;
+      }
+      .platform-chip {
+        flex: 1 1 calc(50% - 10px);
+        text-align: center;
+      }
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="#0969da"><path d="M14.85 3a1 1 0 0 1 .9.57l.06.16L19 14H5l3.2-10.27A1 1 0 0 1 9.14 3h5.71zM12 17a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>
-  <h1>文章转 Markdown</h1>
-  <span>支持微信公众号 · 知乎专栏 · 知乎回答</span>
-</header>
-
-<div class="container">
+  <section class="hero-card">
+    <div class="hero-eyebrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.3 2.3a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 0 1.4l-9 9a1 1 0 0 1-.45.26l-7 2a1 1 0 0 1-1.23-1.23l2-7a1 1 0 0 1 .26-.45l9-9ZM14 4.42 7.85 10.57l-.91 3.19 3.19-.91L16.28 6.7 14 4.42Zm3.7 3.7-6.16 6.16 1.41 1.41 6.16-6.16-1.41-1.41Z"/></svg>
+      All2MD Editorial Desk
+    </div>
+    <h1 class="hero-title">把碎片化分享链接，整理成可编辑、可预览、可下载的 Markdown。</h1>
+    <p class="hero-subtitle">
+      面向公众号、知乎、今日头条的内容提取台。先抓正文，再保留图片、排版语义和结构化信息，让文章从社交平台回到你的写作流程。
+    </p>
+    <div class="hero-metrics">
+      <div class="metric">
+        <strong>3+</strong>
+        <span>内容平台支持</span>
+      </div>
+      <div class="metric">
+        <strong>MD + ZIP</strong>
+        <span>双导出形态</span>
+      </div>
+      <div class="metric">
+        <strong>Live Preview</strong>
+        <span>编辑与预览并行</span>
+      </div>
+    </div>
+  </section>
   <div class="health-card">
-    <span class="health-title">浏览器状态</span>
+    <span class="health-title">系统状态</span>
     <span id="health-badge" class="tag">检测中</span>
     <span id="health-meta" class="health-meta">正在检查服务端浏览器连接…</span>
     <button class="btn btn-gray" type="button" onclick="refreshHealth()">刷新状态</button>
   </div>
+</header>
 
+<div class="container">
   <div class="input-card">
+    <div class="input-top">
+      <div>
+        <div class="section-label" style="margin-bottom:10px;">选择来源平台</div>
+        <p>
+          手动选择会优先按该平台解析；不确定时保持自动识别。支持直接粘贴原始链接，也支持整段分享文案。
+        </p>
+      </div>
+    </div>
     <div class="platform-row">
       <button class="platform-chip active" type="button" data-platform="" onclick="setPlatform('')">自动识别</button>
       <button class="platform-chip" type="button" data-platform="wechat" onclick="setPlatform('wechat')">微信公众号</button>
@@ -142,13 +781,22 @@
       <input id="url-input" type="text" placeholder="粘贴文章链接或整段分享文案…" autocomplete="off" />
       <button class="btn btn-primary" onclick="convert()">🚀 开始转换</button>
     </div>
+    <div class="input-note">
+      <button class="example-chip" type="button" onclick="fillExample('wechat')">公众号链接示例</button>
+      <button class="example-chip" type="button" onclick="fillExample('zhihu')">知乎链接示例</button>
+      <button class="example-chip" type="button" onclick="fillExample('toutiao')">头条分享文案例子</button>
+    </div>
   </div>
 
   <div id="status"></div>
 
   <div id="result-section" class="hidden">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-      <span id="article-title" style="font-size:14px;color:#57606a;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    <div class="result-meta">
+      <div>
+        <span>Result Workspace</span>
+        <strong id="article-title">文章结果</strong>
+      </div>
+      <span id="article-platform-hint"></span>
     </div>
     <div class="result-card">
       <div class="toolbar">
@@ -156,6 +804,10 @@
         <button class="btn btn-green" onclick="downloadMd()">⬇️ 下载 .md 文件</button>
         <button class="btn btn-green" onclick="downloadZip()">🗜️ 下载 ZIP（md + images）</button>
         <button class="btn btn-gray" onclick="reset()">🔄 重新转换</button>
+        <div class="toolbar-actions">
+          <button class="mini-btn" type="button" onclick="copyArticleTitle()">复制标题</button>
+          <button class="mini-btn" type="button" onclick="copyPlainText()">复制纯文本</button>
+        </div>
         <span id="char-count"></span>
       </div>
       <div class="split-view">
@@ -165,14 +817,36 @@
         </div>
         <div class="panel">
           <div class="panel-head">预览</div>
-          <div class="preview-wrap markdown-body" id="preview-area"></div>
+          <div class="panel-subhead">
+            <span id="preview-meta">实时阅读预览</span>
+            <button class="outline-toggle" type="button" onclick="toggleOutline()">目录</button>
+          </div>
+          <div class="preview-shell">
+            <div class="preview-main">
+              <div class="preview-wrap markdown-body" id="preview-area"></div>
+            </div>
+            <aside class="outline-rail" id="outline-rail">
+              <div class="outline-title">文章目录</div>
+              <div class="outline-list" id="outline-list">
+                <div class="outline-empty">转换完成后，这里会自动生成标题导航。</div>
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button type="button" aria-label="关闭预览">&times;</button>
+  <img id="lightbox-image" alt="预览图片" />
+</div>
+<div class="copy-flash" id="copy-flash">已复制</div>
+
 <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>
   let currentTitle = "article";
   let currentPlatform = "";
@@ -182,6 +856,9 @@
   let currentAssets = [];
   let preferPreviewMarkdown = false;
   let loadingTimer = null;
+  let outlineVisible = true;
+  let outlineObserver = null;
+  let copyFlashTimer = null;
 
   const input = document.getElementById("url-input");
   input.addEventListener("keydown", e => { if (e.key === "Enter") convert(); });
@@ -209,8 +886,11 @@
       currentPreviewMarkdown = data.previewMarkdown || currentZipMarkdown || data.markdown || "";
       preferPreviewMarkdown = true;
       currentAssets = Array.isArray(data.assets) ? data.assets : [];
-      document.getElementById("article-title").innerHTML =
-        currentTitle + `<span class="tag tag-${currentPlatform}">${platformLabel(currentPlatform)}</span>`;
+      document.getElementById("article-title").textContent = currentTitle;
+      document.getElementById("article-platform-hint").innerHTML =
+        `解析平台 <span class="tag tag-${currentPlatform}">${platformLabel(currentPlatform)}</span>`;
+      document.getElementById("preview-meta").textContent =
+        `实时阅读预览 · ${currentPlatform ? platformLabel(currentPlatform) : "文章"} · ${currentAssets.length} 张图片`;
 
       const mdArea = document.getElementById("md-source");
       mdArea.value = data.markdown;
@@ -241,15 +921,7 @@
       badge.textContent = browser.ok ? "已就绪" : "不可用";
 
       if (browser.ok) {
-        const modeMap = { remote: "远程调试", managed: "服务托管", disconnected: "未连接" };
-        const mode = modeMap[browser.mode] || browser.mode;
-        const detail = [
-          `模式：${mode}`,
-          `无头：${browser.headless === false ? "否" : "是"}`,
-          browser.wsConfigured ? "已配置远程 Chrome" : "未配置远程 Chrome",
-          browser.userDataDir ? `Profile：${browser.userDataDir}` : ""
-        ].filter(Boolean).join(" · ");
-        meta.textContent = detail;
+        meta.textContent = "服务运行正常，可开始转换文章。";
       } else {
         meta.textContent = browser.error || "浏览器未就绪";
       }
@@ -281,6 +953,21 @@
     return "未知";
   }
 
+  function fillExample(platform) {
+    if (platform === "wechat") {
+      setPlatform("wechat");
+      input.value = "https://mp.weixin.qq.com/s/uBP7AYzqhnWAGR84YcVHNw";
+      return;
+    }
+    if (platform === "zhihu") {
+      setPlatform("zhihu");
+      input.value = "https://zhuanlan.zhihu.com/p/1984192171914594109";
+      return;
+    }
+    setPlatform("toutiao");
+    input.value = "【从“我导师人很好”到“永别了各位”：一位湘雅研究生的730天】 点击链接打开👉 https://m.toutiao.com/is/G6nouiFh_RM/ 复制此条消息，打开今日头条后直接查看";
+  }
+
   function renderPreview() {
     const preEl = document.getElementById("preview-area");
     const source = preferPreviewMarkdown
@@ -288,12 +975,162 @@
       : document.getElementById("md-source").value;
     preferPreviewMarkdown = false;
     preEl.innerHTML = marked.parse(source);
+    preEl.classList.remove("preview-fade");
+    void preEl.offsetWidth;
+    preEl.classList.add("preview-fade");
+    enhancePreview(preEl);
+    buildOutline(preEl);
+  }
+
+  function enhancePreview(container) {
+    transformCallouts(container);
+    decorateImages(container);
+    renderMath(container);
+  }
+
+  function transformCallouts(container) {
+    container.querySelectorAll("blockquote").forEach(blockquote => {
+      const firstParagraph = blockquote.querySelector("p");
+      if (!firstParagraph) return;
+      const text = firstParagraph.textContent.trim();
+      const match = text.match(/^\[!(NOTE|TIP|INFO|WARNING)\]\s*(.*)$/i);
+      if (!match) return;
+
+      const type = match[1].toLowerCase();
+      const title = (match[2] || "").trim() || type.toUpperCase();
+      firstParagraph.remove();
+
+      const wrapper = document.createElement("div");
+      wrapper.className = `callout callout-${type}`;
+
+      const heading = document.createElement("div");
+      heading.className = "callout-title";
+      heading.textContent = title;
+
+      const body = document.createElement("div");
+      body.className = "callout-body";
+      while (blockquote.firstChild) {
+        body.appendChild(blockquote.firstChild);
+      }
+
+      wrapper.appendChild(heading);
+      wrapper.appendChild(body);
+      blockquote.replaceWith(wrapper);
+    });
+  }
+
+  function decorateImages(container) {
+    container.querySelectorAll("img").forEach(img => {
+      img.classList.add("article-image");
+      img.addEventListener("click", () => openLightbox(img.src), { once: true });
+    });
+  }
+
+  function renderMath(container) {
+    if (!window.renderMathInElement) return;
+    window.renderMathInElement(container, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false }
+      ],
+      throwOnError: false
+    });
+  }
+
+  function openLightbox(src) {
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    image.src = src;
+    lightbox.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox(event) {
+    if (event.target.id !== "lightbox" && event.target.tagName !== "BUTTON") return;
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    image.src = "";
+    lightbox.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
+  function buildOutline(container) {
+    const outline = document.getElementById("outline-list");
+    const headings = [...container.querySelectorAll("h1, h2, h3")];
+    if (outlineObserver) {
+      outlineObserver.disconnect();
+      outlineObserver = null;
+    }
+    if (!headings.length) {
+      outline.innerHTML = '<div class="outline-empty">这篇内容没有可导航的标题层级。</div>';
+      return;
+    }
+
+    outline.innerHTML = "";
+    headings.forEach((heading, index) => {
+      const level = Number(heading.tagName.replace("H", ""));
+      if (!heading.id) heading.id = `preview-heading-${index}`;
+      const link = document.createElement("a");
+      link.href = `#${heading.id}`;
+      link.className = `outline-link level-${Math.min(level, 3)}`;
+      link.textContent = heading.textContent.trim();
+      link.addEventListener("click", event => {
+        event.preventDefault();
+        heading.scrollIntoView({ behavior: "smooth", block: "start" });
+        setActiveOutline(link);
+      });
+      outline.appendChild(link);
+    });
+
+    const links = [...outline.querySelectorAll(".outline-link")];
+    outlineObserver = new IntersectionObserver(entries => {
+      const visible = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (!visible) return;
+      const active = links.find(link => link.getAttribute("href") === `#${visible.target.id}`);
+      if (active) setActiveOutline(active);
+    }, {
+      root: container,
+      rootMargin: "-10% 0px -70% 0px",
+      threshold: [0, 1]
+    });
+
+    headings.forEach(heading => outlineObserver.observe(heading));
+    if (links[0]) setActiveOutline(links[0]);
+  }
+
+  function setActiveOutline(activeLink) {
+    document.querySelectorAll(".outline-link").forEach(link => {
+      link.classList.toggle("active", link === activeLink);
+    });
+  }
+
+  function toggleOutline() {
+    outlineVisible = !outlineVisible;
+    const rail = document.getElementById("outline-rail");
+    const shell = rail.parentElement;
+    const main = shell.querySelector(".preview-main");
+    rail.style.display = outlineVisible ? "block" : "none";
+    shell.style.gridTemplateColumns = outlineVisible ? "minmax(0, 1fr) 220px" : "1fr";
+    main.style.borderRight = outlineVisible ? "1px solid var(--line)" : "none";
   }
 
   async function copyMd() {
     const text = document.getElementById("md-source").value;
     await navigator.clipboard.writeText(text);
-    alert("✅ 已复制到剪贴板");
+    flashCopied("Markdown 已复制");
+  }
+
+  async function copyArticleTitle() {
+    await navigator.clipboard.writeText(currentTitle || "");
+    flashCopied("标题已复制");
+  }
+
+  async function copyPlainText() {
+    const source = document.getElementById("preview-area").innerText.trim() || document.getElementById("md-source").value;
+    await navigator.clipboard.writeText(source);
+    flashCopied("纯文本已复制");
   }
 
   async function downloadMd() {
@@ -334,6 +1171,14 @@
     currentPreviewMarkdown = "";
     currentAssets = [];
     preferPreviewMarkdown = false;
+    document.getElementById("article-title").textContent = "文章结果";
+    document.getElementById("article-platform-hint").textContent = "";
+    document.getElementById("preview-meta").textContent = "实时阅读预览";
+    document.getElementById("outline-list").innerHTML = '<div class="outline-empty">转换完成后，这里会自动生成标题导航。</div>';
+    if (outlineObserver) {
+      outlineObserver.disconnect();
+      outlineObserver = null;
+    }
     document.getElementById("result-section").classList.add("hidden");
     hideStatus();
     input.focus();
@@ -379,6 +1224,16 @@
     el.style.display = "none";
     el.className = "";
     el.innerHTML = "";
+  }
+
+  function flashCopied(message) {
+    const flash = document.getElementById("copy-flash");
+    flash.textContent = message;
+    flash.classList.add("show");
+    if (copyFlashTimer) clearTimeout(copyFlashTimer);
+    copyFlashTimer = setTimeout(() => {
+      flash.classList.remove("show");
+    }, 1400);
   }
 </script>
 </body>
