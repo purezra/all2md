@@ -829,19 +829,11 @@
       <button class="platform-chip" type="button" data-platform="wechat" onclick="setPlatform('wechat')">微信公众号</button>
       <button class="platform-chip" type="button" data-platform="zhihu" onclick="setPlatform('zhihu')">知乎</button>
       <button class="platform-chip" type="button" data-platform="toutiao" onclick="setPlatform('toutiao')">今日头条</button>
-      <button class="platform-chip" type="button" data-platform="x" onclick="setPlatform('x')">X / Twitter</button>
       <button class="platform-chip" type="button" data-platform="github" onclick="setPlatform('github')">GitHub</button>
     </div>
     <div class="input-row">
       <input id="url-input" type="text" placeholder="粘贴文章链接或整段分享文案…" autocomplete="off" />
       <button class="btn btn-primary" onclick="convert()">🚀 开始转换</button>
-    </div>
-    <div class="input-note">
-      <button class="example-chip" type="button" onclick="fillExample('wechat')">公众号链接示例</button>
-      <button class="example-chip" type="button" onclick="fillExample('zhihu')">知乎链接示例</button>
-      <button class="example-chip" type="button" onclick="fillExample('toutiao')">头条分享文案例子</button>
-      <button class="example-chip" type="button" onclick="fillExample('x')">X 帖子示例</button>
-      <button class="example-chip" type="button" onclick="fillExample('github')">GitHub README 示例</button>
     </div>
   </div>
 
@@ -1017,10 +1009,8 @@
         ? "粘贴知乎链接或分享文案…"
         : platform === "toutiao"
           ? "粘贴今日头条链接或分享文案…"
-          : platform === "x"
-            ? "粘贴 X / Twitter 帖子链接…"
-            : platform === "github"
-              ? "粘贴 GitHub 仓库链接、owner/repo 或 GitHub 标题…"
+          : platform === "github"
+            ? "粘贴 GitHub 仓库链接、owner/repo 或 GitHub 标题…"
           : "粘贴文章链接或整段分享文案…";
   }
 
@@ -1028,34 +1018,8 @@
     if (platform === "wechat") return "微信";
     if (platform === "zhihu") return "知乎";
     if (platform === "toutiao") return "头条";
-    if (platform === "x") return "X";
     if (platform === "github") return "GitHub";
     return "未知";
-  }
-
-  function fillExample(platform) {
-    if (platform === "wechat") {
-      setPlatform("wechat");
-      input.value = "https://mp.weixin.qq.com/s/uBP7AYzqhnWAGR84YcVHNw";
-      return;
-    }
-    if (platform === "zhihu") {
-      setPlatform("zhihu");
-      input.value = "https://zhuanlan.zhihu.com/p/1984192171914594109";
-      return;
-    }
-    if (platform === "x") {
-      setPlatform("x");
-      input.value = "https://x.com/i/status/2033884676415496346";
-      return;
-    }
-    if (platform === "github") {
-      setPlatform("github");
-      input.value = "GitHub - NVIDIA/NemoClaw: NVIDIA plugin for secure installation of OpenClaw";
-      return;
-    }
-    setPlatform("toutiao");
-    input.value = "【从“我导师人很好”到“永别了各位”：一位湘雅研究生的730天】 点击链接打开👉 https://m.toutiao.com/is/G6nouiFh_RM/ 复制此条消息，打开今日头条后直接查看";
   }
 
   function renderPreview() {
