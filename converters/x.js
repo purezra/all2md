@@ -138,13 +138,93 @@ async function convertViaPage(url, statusId) {
 
   await withPage("https://x.com/", async page => {
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
-    await page.waitForSelector("article, main", { timeout: 12000 });
+    await page.waitForSelector("body", { timeout: 12000 });
 
     meta = await page.evaluate((targetStatusId, pageUrl) => {
       const normalizeHref = href => {
         if (!href) return "";
         if (/^https?:\/\//i.test(href)) return href;
         return new URL(href, location.origin).href;
+      };
+
+      const pickMeta = (...keys) => {
+        for (const key of keys) {
+          const value =
+            document.querySelector(`meta[property="${key}"]`)?.getAttribute("content") ||
+            document.querySelector(`meta[name="${key}"]`)?.getAttribute("content");
+          if (typeof value === "string" && value.trim()) return value.trim();
+        }
+        return "";
+      };
+
+      const normalizeDescription = value => {
+        const text = String(value || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (!text) return "";
+        if (/^log in to x|^登录 x|^x\b/i.test(text)) return "";
+        if (/from breaking news and entertainment/i.test(text)) return "";
+        return text;
+      };
+
+      const buildMetaFallback = () => {
+        const description = normalizeDescription(
+          pickMeta("og:description", "twitter:description", "description")
+        );
+        if (!description) return null;
+
+        const rawTitle = pickMeta("og:title", "twitter:title") || document.title || "X 帖子";
+        const image = pickMeta("og:image", "twitter:image");
+        const creator = pickMeta("twitter:creator", "twitter:site").replace(/^@/, "");
+
+        return {
+          title: description.split("\n").map(line => line.trim()).find(Boolean)?.slice(0, 80) || rawTitle,
+          author: creator || "",
+          username: creator || "",
+          date: "",
+          textHtml: description
+            .split(/\n{2,}/)
+            .map(line => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`)
+            .join(""),
+          images: image ? [image] : [],
+          videoPoster: "",
+          sourceUrl: pageUrl
+        };
+      };
+
+      const buildLdJsonFallback = () => {
+        const scripts = Array.from(document.querySelectorAll("script[type='application/ld+json']"));
+        for (const script of scripts) {
+          try {
+            const data = JSON.parse(script.textContent || "{}");
+            const items = Array.isArray(data) ? data : [data];
+            for (const item of items) {
+              if (!item || typeof item !== "object") continue;
+              const text = normalizeDescription(item.articleBody || item.description || "");
+              if (!text) continue;
+
+              const authorName = typeof item.author === "object"
+                ? (item.author.alternateName || item.author.name || "")
+                : "";
+              const image = Array.isArray(item.image) ? item.image[0] : item.image || "";
+
+              return {
+                title: text.split("\n").map(line => line.trim()).find(Boolean)?.slice(0, 80) || item.headline || "X 帖子",
+                author: String(authorName || "").replace(/^@/, ""),
+                username: String(authorName || "").replace(/^@/, ""),
+                date: item.datePublished || "",
+                textHtml: text
+                  .split(/\n{2,}/)
+                  .map(line => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`)
+                  .join(""),
+                images: image ? [image] : [],
+                videoPoster: "",
+                sourceUrl: item.url || pageUrl
+              };
+            }
+          } catch (_error) {}
+        }
+        return null;
       };
 
       const articles = Array.from(document.querySelectorAll("article"));
@@ -160,7 +240,9 @@ async function convertViaPage(url, statusId) {
       };
 
       const article = pickArticle();
-      if (!article) return null;
+      if (!article) {
+        return buildLdJsonFallback() || buildMetaFallback();
+      }
 
       const authorRoot = article.querySelector("[data-testid='User-Name']");
       const nameSpans = Array.from(authorRoot?.querySelectorAll("span") || [])
