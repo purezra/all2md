@@ -83,6 +83,56 @@ async function convertViaSyndication(url, statusId) {
   }
 }
 
+async function convertViaHtmlMeta(url) {
+  try {
+    const res = await axios.get(url, {
+      timeout: 15000,
+      maxRedirects: 5,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml"
+      }
+    });
+
+    const $ = cheerio.load(res.data || "");
+    const pickMeta = (...keys) => {
+      for (const key of keys) {
+        const value =
+          $(`meta[property="${key}"]`).attr("content") ||
+          $(`meta[name="${key}"]`).attr("content");
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+      return "";
+    };
+
+    const description = pickMeta("og:description", "twitter:description", "description");
+    const title = pickMeta("og:title", "twitter:title") || "X 帖子";
+    const image = pickMeta("og:image", "twitter:image");
+    const author = pickMeta("twitter:site", "twitter:creator").replace(/^@/, "");
+
+    // X 未登录页常返回 “登录 / 注册” 等通用文案，过滤掉这类无效描述
+    if (!description || /log in|sign up|登录|注册|join x/i.test(description)) {
+      return null;
+    }
+
+    return {
+      title: description.split("\n").map(line => line.trim()).find(Boolean)?.slice(0, 80) || title,
+      author: author || "",
+      username: author || "",
+      date: "",
+      textHtml: description
+        .split(/\n{2,}/)
+        .map(line => `<p>${escapeHtml(line).replace(/\n/g, "<br>")}</p>`)
+        .join(""),
+      images: image ? [image] : [],
+      videoPoster: "",
+      sourceUrl: url
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
 async function convertViaPage(url, statusId) {
   let meta = null;
 
@@ -157,6 +207,10 @@ async function convertViaPage(url, statusId) {
 async function convertX(url) {
   const statusId = extractStatusId(url);
   let meta = await convertViaSyndication(url, statusId);
+
+  if (!meta) {
+    meta = await convertViaHtmlMeta(url);
+  }
 
   if (!meta) {
     meta = await convertViaPage(url, statusId);

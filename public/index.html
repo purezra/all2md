@@ -973,6 +973,7 @@
       document.getElementById("result-section").classList.remove("hidden");
       renderPreview();
     } catch (err) {
+      hideStatus();
       showStatus("error", "❌ " + err.message);
     }
   }
