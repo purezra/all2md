@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All2MD</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-brand">
+        <img class="hero-logo" src="pig_md.svg" alt="All2MD">
+        <div class="eyebrow">All2MD Plugin</div>
+      </div>
+      <h1 id="hero-title">当前网页</h1>
+      <p id="page-meta" class="subtitle">等待当前页面响应…</p>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <button id="extract-btn" class="btn btn-primary" type="button">提取当前页</button>
+        <button id="copy-btn" class="btn btn-secondary" type="button" disabled>复制</button>
+        <button id="download-btn" class="btn btn-secondary" type="button" disabled>下载 .md</button>
+        <button id="download-zip-btn" class="btn btn-secondary" type="button" disabled>下载 .zip</button>
+      </div>
+
+      <div id="status" class="status status-info">打开支持的平台页面后，点击“提取当前页”。</div>
+
+      <div class="meta-row">
+        <span id="platform-pill" class="pill">未检测</span>
+        <span id="title-meta" class="meta-text">尚无结果</span>
+      </div>
+
+      <div class="view-toggle">
+        <button id="tab-source" class="view-tab active" type="button">Markdown</button>
+        <button id="tab-preview" class="view-tab" type="button">预览</button>
+      </div>
+
+      <textarea id="markdown-output" spellcheck="false" placeholder="提取结果会显示在这里…"></textarea>
+      <div id="preview-output" class="preview hidden"></div>
+    </section>
+  </main>
+
+  <script src="lib/markdown.js"></script>
+  <script src="lib/jszip.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

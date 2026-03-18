@@ -3,6 +3,7 @@ const { convertZhihu } = require("./zhihu");
 const { convertToutiao } = require("./toutiao");
 const { convertX } = require("./x");
 const { convertGitHub } = require("./github");
+const { detectPlatform } = require("../plugin/lib/platform");
 
 function extractGitHubRepo(input) {
   if (!input || typeof input !== "string") return "";
@@ -34,15 +35,6 @@ function normalizeInput(input) {
   return url;
 }
 
-function detectPlatform(url) {
-  if (url.includes("mp.weixin.qq.com")) return "wechat";
-  if (url.includes("zhihu.com")) return "zhihu";
-  if (url.includes("toutiao.com")) return "toutiao";
-  if (url.includes("x.com") || url.includes("twitter.com")) return "x";
-  if (url.includes("github.com")) return "github";
-  return null;
-}
-
 async function convertArticle(input, platformHint = "") {
   const url = normalizeInput(input);
   const normalizedHint = typeof platformHint === "string" ? platformHint.trim().toLowerCase() : "";
@@ -62,3 +54,4 @@ async function convertArticle(input, platformHint = "") {
 }
 
 module.exports = { convertArticle, detectPlatform, extractUrl, extractGitHubRepo, normalizeInput };
+

@@ -6,10 +6,7 @@ const {
   normalizeRichContent
 } = require("../utils/helper");
 const { withPage } = require("../utils/browser");
-
-function extractStatusId(url) {
-  return url.match(/\/status\/(\d+)/i)?.[1] || "";
-}
+const { extractXResource } = require("../plugin/lib/platform");
 
 function escapeHtml(text) {
   return String(text || "")
@@ -49,11 +46,11 @@ function buildHtmlFromTweet(meta) {
   return blocks.join("");
 }
 
-async function convertViaSyndication(url, statusId) {
-  if (!statusId) return null;
+async function convertViaSyndication(url, resource) {
+  if (!resource?.id || resource.kind !== "status") return null;
 
   try {
-    const res = await axios.get(`https://cdn.syndication.twimg.com/tweet-result?id=${statusId}&lang=zh-cn`, {
+    const res = await axios.get(`https://cdn.syndication.twimg.com/tweet-result?id=${resource.id}&lang=zh-cn`, {
       timeout: 15000,
       headers: { "User-Agent": "article-to-md" }
     });
@@ -133,14 +130,23 @@ async function convertViaHtmlMeta(url) {
   }
 }
 
-async function convertViaPage(url, statusId) {
+async function convertViaPage(url, resource) {
   let meta = null;
 
   await withPage("https://x.com/", async page => {
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20000 });
-    await page.waitForSelector("body", { timeout: 12000 });
+    try {
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
+    } catch (error) {
+      if (error.name !== "TimeoutError") {
+        throw error;
+      }
+      console.warn(`[x] navigation timeout, continue with partial DOM: ${url}`);
+    }
+    await page.waitForFunction(() => {
+      return document.readyState !== "loading" || Boolean(document.body);
+    }, { timeout: 5000 }).catch(() => {});
 
-    meta = await page.evaluate((targetStatusId, pageUrl) => {
+    meta = await page.evaluate((targetResource, pageUrl) => {
       const normalizeHref = href => {
         if (!href) return "";
         if (/^https?:\/\//i.test(href)) return href;
@@ -230,11 +236,12 @@ async function convertViaPage(url, statusId) {
       const articles = Array.from(document.querySelectorAll("article"));
       const pickArticle = () => {
         if (!articles.length) return null;
-        if (!targetStatusId) return articles[0];
+        if (!targetResource?.id) return articles[0];
 
         return articles.find(article => {
-          return Array.from(article.querySelectorAll("a[href*='/status/']")).some(anchor => {
-            return anchor.getAttribute("href")?.includes(`/status/${targetStatusId}`);
+          return Array.from(article.querySelectorAll("a[href*='/status/'], a[href*='/article/']")).some(anchor => {
+            const href = anchor.getAttribute("href") || "";
+            return href.includes(`/${targetResource.kind}/${targetResource.id}`);
           });
         }) || articles[0];
       };
@@ -262,7 +269,7 @@ async function convertViaPage(url, statusId) {
         article.querySelector("[data-testid='videoPlayer'] video")?.getAttribute("poster") ||
         "";
       const timeNode = article.querySelector("time");
-      const statusLink = Array.from(article.querySelectorAll("a[href*='/status/']"))
+      const statusLink = Array.from(article.querySelectorAll("a[href*='/status/'], a[href*='/article/']"))
         .map(anchor => normalizeHref(anchor.getAttribute("href")))
         .find(Boolean) || pageUrl;
 
@@ -276,7 +283,7 @@ async function convertViaPage(url, statusId) {
         videoPoster,
         sourceUrl: statusLink
       };
-    }, statusId, url);
+    }, resource, url);
   });
 
   if (!meta || !meta.textHtml) {
@@ -287,15 +294,15 @@ async function convertViaPage(url, statusId) {
 }
 
 async function convertX(url) {
-  const statusId = extractStatusId(url);
-  let meta = await convertViaSyndication(url, statusId);
+  const resource = extractXResource(url);
+  let meta = await convertViaSyndication(url, resource);
 
   if (!meta) {
     meta = await convertViaHtmlMeta(url);
   }
 
   if (!meta) {
-    meta = await convertViaPage(url, statusId);
+    meta = await convertViaPage(url, resource);
   }
 
   const $ = cheerio.load(buildHtmlFromTweet(meta));
@@ -322,4 +329,5 @@ async function convertX(url) {
   };
 }
 
-module.exports = { convertX, extractStatusId };
+module.exports = { convertX, extractXResource };
+

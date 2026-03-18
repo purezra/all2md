@@ -52,13 +52,9 @@
       width: 100%;
       margin: 0;
       padding: 42px clamp(16px, 2vw, 32px) 18px;
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 22px;
-      align-items: end;
+      display: block;
     }
     .hero-card,
-    .health-card,
     .input-card,
     .result-card {
       backdrop-filter: blur(18px);
@@ -94,6 +90,72 @@
       color: var(--accent-dark);
       background: var(--accent-soft);
       border: 1px solid rgba(184, 76, 42, 0.16);
+    }
+    .hero-health {
+      position: absolute;
+      top: 22px;
+      right: 24px;
+      z-index: 2;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .hero-health-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(48, 40, 31, 0.1);
+      box-shadow: 0 18px 34px rgba(58, 44, 22, 0.12);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+    .hero-health-panel {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      min-width: 320px;
+      max-width: min(380px, calc(100vw - 48px));
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(255, 251, 245, 0.96);
+      border: 1px solid rgba(48, 40, 31, 0.1);
+      box-shadow: 0 26px 50px rgba(58, 44, 22, 0.18);
+      opacity: 0;
+      transform: translateY(-6px);
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .hero-health:hover .hero-health-panel,
+    .hero-health:focus-within .hero-health-panel {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .hero-health-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .hero-health-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .hero-health-meta {
+      margin: 0 0 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--muted);
     }
     .hero-title {
       margin: 18px 0 10px;
@@ -165,23 +227,6 @@
       max-width: 700px;
       line-height: 1.7;
     }
-    .health-card {
-      padding: 18px 20px;
-      margin-bottom: 18px;
-      border-radius: 28px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .health-title {
-      font-size: 12px;
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .health-meta { font-size: 13px; color: var(--muted); }
     .input-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; }
     .platform-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
     .platform-chip {
@@ -203,10 +248,10 @@
       border-color: transparent;
       box-shadow: 0 14px 30px rgba(184, 76, 42, 0.22);
     }
-    .input-row input {
+    .input-row textarea {
       flex: 1;
       min-width: 260px;
-      min-height: 58px;
+      min-height: 116px;
       padding: 18px 18px;
       border: 1px solid var(--line);
       border-radius: 18px;
@@ -215,11 +260,20 @@
       transition: border .2s, box-shadow .2s, transform .2s;
       background: rgba(255,255,255,0.72);
       color: var(--ink);
+      resize: vertical;
+      font-family: var(--sans);
+      line-height: 1.7;
     }
-    .input-row input:focus {
+    .input-row textarea:focus {
       border-color: rgba(184, 76, 42, 0.42);
       box-shadow: 0 0 0 5px rgba(184, 76, 42, 0.12);
       transform: translateY(-1px);
+    }
+    .input-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 148px;
     }
     .input-note {
       display: flex;
@@ -255,6 +309,11 @@
     }
     .btn:hover { transform: translateY(-1px); }
     .btn:active { opacity: .75; transform: translateY(0); }
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+      transform: none;
+    }
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #d36b43);
       color: #fff;
@@ -687,6 +746,9 @@
       .preview-wrap {
         min-height: 420px;
       }
+      .input-actions {
+        width: 100%;
+      }
     }
     #status {
       display: none;
@@ -722,6 +784,15 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     .hidden { display: none !important; }
+    .batch-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .04em;
+    }
     .tag {
       display: inline-block;
       padding: 4px 10px;
@@ -735,11 +806,12 @@
     .tag-wechat { background: rgba(22, 101, 52, 0.12); color: #166534; }
     .tag-zhihu  { background: rgba(30, 58, 138, 0.1); color: #1e3a8a; }
     .tag-toutiao { background: rgba(185, 28, 28, 0.12); color: #b91c1c; }
+    .tag-x { background: rgba(17, 24, 39, 0.12); color: #111827; }
+    .tag-github { background: rgba(31, 41, 55, 0.12); color: #1f2937; }
     .tag-ok     { background: rgba(22, 101, 52, 0.12); color: #166534; }
     .tag-bad    { background: rgba(185, 28, 28, 0.12); color: #991b1b; }
     @media (max-width: 1040px) {
       header {
-        grid-template-columns: 1fr;
         padding-top: 26px;
       }
     }
@@ -751,9 +823,16 @@
       }
       .hero-card,
       .input-card,
-      .health-card,
       .result-card {
         border-radius: 22px;
+      }
+      .hero-health {
+        position: static;
+        margin-bottom: 16px;
+      }
+      .hero-health-panel {
+        left: 0;
+        right: auto;
       }
       .toolbar {
         align-items: stretch;
@@ -783,6 +862,20 @@
 
 <header>
   <section class="hero-card">
+    <div class="hero-health" tabindex="0">
+      <div class="hero-health-toggle">
+        <span>系统状态</span>
+        <span id="health-badge" class="tag">检测中</span>
+      </div>
+      <div class="hero-health-panel">
+        <div class="hero-health-row">
+          <span class="hero-health-label">系统状态</span>
+          <span id="health-badge-panel" class="tag">检测中</span>
+        </div>
+        <p id="health-meta" class="hero-health-meta">正在检查服务端浏览器连接…</p>
+        <button class="btn btn-gray" type="button" onclick="refreshHealth()">刷新状态</button>
+      </div>
+    </div>
     <div class="hero-eyebrow">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13.3 2.3a1 1 0 0 1 1.4 0l7 7a1 1 0 0 1 0 1.4l-9 9a1 1 0 0 1-.45.26l-7 2a1 1 0 0 1-1.23-1.23l2-7a1 1 0 0 1 .26-.45l9-9ZM14 4.42 7.85 10.57l-.91 3.19 3.19-.91L16.28 6.7 14 4.42Zm3.7 3.7-6.16 6.16 1.41 1.41 6.16-6.16-1.41-1.41Z"/></svg>
       All2MD Editorial Desk
@@ -806,12 +899,6 @@
       </div>
     </div>
   </section>
-  <div class="health-card">
-    <span class="health-title">系统状态</span>
-    <span id="health-badge" class="tag">检测中</span>
-    <span id="health-meta" class="health-meta">正在检查服务端浏览器连接…</span>
-    <button class="btn btn-gray" type="button" onclick="refreshHealth()">刷新状态</button>
-  </div>
 </header>
 
 <div class="container">
@@ -829,11 +916,19 @@
       <button class="platform-chip" type="button" data-platform="wechat" onclick="setPlatform('wechat')">微信公众号</button>
       <button class="platform-chip" type="button" data-platform="zhihu" onclick="setPlatform('zhihu')">知乎</button>
       <button class="platform-chip" type="button" data-platform="toutiao" onclick="setPlatform('toutiao')">今日头条</button>
+      <button class="platform-chip" type="button" data-platform="x" onclick="setPlatform('x')">X / Twitter</button>
       <button class="platform-chip" type="button" data-platform="github" onclick="setPlatform('github')">GitHub</button>
     </div>
     <div class="input-row">
-      <input id="url-input" type="text" placeholder="粘贴文章链接或整段分享文案…" autocomplete="off" />
-      <button class="btn btn-primary" onclick="convert()">🚀 开始转换</button>
+      <textarea id="url-input" placeholder="每行粘贴一个链接，或直接粘贴单个链接 / 分享文案…" autocomplete="off"></textarea>
+      <div class="input-actions">
+        <button id="convert-btn" class="btn btn-primary" onclick="convert()">🚀 开始转换</button>
+        <button id="stop-btn" class="btn btn-gray" type="button" onclick="stopConversion()" disabled>停止</button>
+      </div>
+    </div>
+    <div class="batch-meta">
+      <span id="batch-count">当前识别 0 条链接</span>
+      <span id="elapsed-time">耗时 0.0s</span>
     </div>
   </div>
 
@@ -920,61 +1015,219 @@
   let outlineVisible = true;
   let outlineObserver = null;
   let copyFlashTimer = null;
+  let isConverting = false;
+  let stopRequested = false;
+  let activeController = null;
+  let timingTimer = null;
+  let conversionStartedAt = 0;
+  let lastInputTimestamp = 0;
+  let loadingMeta = { total: 0, current: 0, url: "" };
   let currentSplitRatio = Number(localStorage.getItem("all2md.splitRatio") || 50);
 
   const input = document.getElementById("url-input");
   const splitView = document.querySelector(".split-view");
   const splitter = document.getElementById("splitter");
-  input.addEventListener("keydown", e => { if (e.key === "Enter") convert(); });
+  input.addEventListener("input", () => {
+    lastInputTimestamp = Date.now();
+    refreshBatchCount();
+  });
+  input.addEventListener("paste", () => {
+    lastInputTimestamp = Date.now();
+    setTimeout(refreshBatchCount, 0);
+  });
   refreshHealth();
+  refreshBatchCount();
+  updateElapsed(0);
   setupSplitPane();
 
-  async function convert() {
-    const text = input.value.trim();
-    if (!text) { alert("请先粘贴文章链接或分享文案"); return; }
+  function extractBatchInputs(text) {
+    const trimmed = (text || "").trim();
+    if (!trimmed) return [];
 
-    startLoadingStatus();
+    const urls = trimmed.match(/https?:\/\/[^\s"'`<>]+/g) || [];
+    if (urls.length > 1) {
+      return urls.map(item => item.trim()).filter(Boolean);
+    }
+
+    const lines = trimmed.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+    if (lines.length > 1 && lines.every(line => /^https?:\/\//i.test(line))) {
+      return lines;
+    }
+
+    return [trimmed];
+  }
+
+  function refreshBatchCount() {
+    const items = extractBatchInputs(input.value);
+    document.getElementById("batch-count").textContent = `当前识别 ${items.length} 条链接`;
+  }
+
+  function updateElapsed(seconds) {
+    document.getElementById("elapsed-time").textContent = `耗时 ${seconds.toFixed(1)}s`;
+  }
+
+  function beginTiming() {
+    conversionStartedAt = lastInputTimestamp || Date.now();
+    updateElapsed(Math.max(0, (Date.now() - conversionStartedAt) / 1000));
+    if (timingTimer) clearInterval(timingTimer);
+    timingTimer = setInterval(() => {
+      updateElapsed(Math.max(0, (Date.now() - conversionStartedAt) / 1000));
+    }, 100);
+  }
+
+  function stopTiming() {
+    if (timingTimer) {
+      clearInterval(timingTimer);
+      timingTimer = null;
+    }
+  }
+
+  async function convert() {
+    const items = extractBatchInputs(input.value);
+    if (!items.length) { alert("请先粘贴文章链接或分享文案"); return; }
+    if (isConverting) return;
+
+    isConverting = true;
+    stopRequested = false;
+    const convertButton = document.getElementById("convert-btn");
+    const stopButton = document.getElementById("stop-btn");
+    convertButton.disabled = true;
+    convertButton.textContent = "处理中…";
+    stopButton.disabled = false;
+
+    beginTiming();
+    startLoadingStatus(items.length);
     document.getElementById("result-section").classList.add("hidden");
+    const results = [];
+    const allAssets = [];
+    const assetSet = new Set();
 
     try {
-      const res = await fetch("/api/convert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: text, platformHint: selectedPlatform })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "转换失败");
+      for (let index = 0; index < items.length; index++) {
+        if (stopRequested) break;
 
-      currentTitle = data.title || "article";
-      currentPlatform = data.platform || "";
-      currentZipMarkdown = data.zipMarkdown || data.markdown || "";
-      currentPreviewMarkdown = data.previewMarkdown || currentZipMarkdown || data.markdown || "";
-      preferPreviewMarkdown = true;
-      currentAssets = Array.isArray(data.assets) ? data.assets : [];
-      document.getElementById("article-title").textContent = currentTitle;
-      document.getElementById("article-platform-hint").innerHTML =
-        `解析平台 <span class="tag tag-${currentPlatform}">${platformLabel(currentPlatform)}</span>`;
-      document.getElementById("preview-meta").textContent =
-        `实时阅读预览 · ${currentPlatform ? platformLabel(currentPlatform) : "文章"} · ${currentAssets.length} 张图片`;
+        const item = items[index];
+        loadingMeta.current = index + 1;
+        loadingMeta.url = item;
+        updateLoadingStatus(`正在处理第 ${index + 1}/${items.length} 条链接`);
 
-      const mdArea = document.getElementById("md-source");
-      mdArea.value = data.markdown;
-      document.getElementById("char-count").textContent = `共 ${data.markdown.length.toLocaleString()} 字符`;
+        activeController = new AbortController();
+        const res = await fetch("/api/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input: item, platformHint: selectedPlatform }),
+          signal: activeController.signal
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "转换失败");
 
+        results.push({
+          input: item,
+          title: data.title || `第 ${index + 1} 条内容`,
+          platform: data.platform || "",
+          markdown: data.markdown || "",
+          zipMarkdown: data.zipMarkdown || data.markdown || "",
+          previewMarkdown: data.previewMarkdown || data.zipMarkdown || data.markdown || "",
+          assets: Array.isArray(data.assets) ? data.assets : []
+        });
+
+        for (const asset of results[results.length - 1].assets) {
+          if (!assetSet.has(asset)) {
+            assetSet.add(asset);
+            allAssets.push(asset);
+          }
+        }
+      }
+
+      if (!results.length) {
+        throw new Error(stopRequested ? "已停止处理" : "没有可展示的转换结果");
+      }
+      applyResults(results, allAssets);
       hideStatus();
-      document.getElementById("result-section").classList.remove("hidden");
-      renderPreview();
+
+      if (stopRequested) {
+        showStatus("error", `⏹️ 已停止处理，已完成 ${results.length}/${items.length} 条`);
+      }
     } catch (err) {
       hideStatus();
-      showStatus("error", "❌ " + err.message);
+      if (err.name === "AbortError") {
+        if (results.length) {
+          applyResults(results, allAssets);
+          showStatus("error", `⏹️ 已停止处理，已完成 ${results.length}/${items.length} 条`);
+        } else {
+          showStatus("error", "⏹️ 已停止当前处理");
+        }
+      } else {
+        showStatus("error", "❌ " + err.message);
+      }
+    } finally {
+      activeController = null;
+      isConverting = false;
+      stopRequested = false;
+      convertButton.disabled = false;
+      convertButton.textContent = "🚀 开始转换";
+      stopButton.disabled = true;
+      stopTiming();
     }
+  }
+
+  function stopConversion() {
+    if (!isConverting) return;
+    stopRequested = true;
+    if (activeController) {
+      activeController.abort();
+    }
+    updateLoadingStatus("正在停止当前处理…");
+  }
+
+  function applyResults(results, allAssets) {
+    const single = results.length === 1;
+    currentTitle = single ? results[0].title : `${results.length} 篇内容汇总`;
+    currentPlatform = single ? results[0].platform : "batch";
+    currentAssets = allAssets;
+    currentZipMarkdown = results.map((item, index) => {
+      return [
+        `# ${index + 1}. ${item.title}`,
+        `原始链接: ${item.input}`,
+        item.platform ? `平台: ${platformLabel(item.platform)}` : "",
+        "",
+        item.zipMarkdown.trim()
+      ].filter(Boolean).join("\n\n");
+    }).join("\n\n---\n\n");
+    currentPreviewMarkdown = results.map((item, index) => {
+      return [
+        `# ${index + 1}. ${item.title}`,
+        `原始链接: ${item.input}`,
+        item.platform ? `平台: ${platformLabel(item.platform)}` : "",
+        "",
+        item.previewMarkdown.trim()
+      ].filter(Boolean).join("\n\n");
+    }).join("\n\n---\n\n");
+    preferPreviewMarkdown = true;
+
+    document.getElementById("article-title").textContent = currentTitle;
+    document.getElementById("article-platform-hint").innerHTML = single
+      ? `解析平台 <span class="tag tag-${currentPlatform}">${platformLabel(currentPlatform)}</span>`
+      : `批量处理 <span class="tag">${results.length} items</span>`;
+    document.getElementById("preview-meta").textContent = single
+      ? `实时阅读预览 · ${platformLabel(currentPlatform)} · ${currentAssets.length} 张图片`
+      : `实时阅读预览 · 批量结果 · ${results.length} 篇内容 · ${currentAssets.length} 张图片`;
+
+    const mdArea = document.getElementById("md-source");
+    mdArea.value = currentZipMarkdown;
+    document.getElementById("char-count").textContent = `共 ${currentZipMarkdown.length.toLocaleString()} 字符`;
+    document.getElementById("result-section").classList.remove("hidden");
+    renderPreview();
   }
 
   async function refreshHealth() {
     const badge = document.getElementById("health-badge");
+    const panelBadge = document.getElementById("health-badge-panel");
     const meta = document.getElementById("health-meta");
     badge.className = "tag";
+    panelBadge.className = "tag";
     badge.textContent = "检测中";
+    panelBadge.textContent = "检测中";
     meta.textContent = "正在检查服务端浏览器连接…";
 
     try {
@@ -984,7 +1237,9 @@
 
       const browser = data.browser;
       badge.classList.add(browser.ok ? "tag-ok" : "tag-bad");
+      panelBadge.classList.add(browser.ok ? "tag-ok" : "tag-bad");
       badge.textContent = browser.ok ? "已就绪" : "不可用";
+      panelBadge.textContent = browser.ok ? "已就绪" : "不可用";
 
       if (browser.ok) {
         meta.textContent = "服务运行正常，可开始转换文章。";
@@ -993,7 +1248,9 @@
       }
     } catch (err) {
       badge.classList.add("tag-bad");
+      panelBadge.classList.add("tag-bad");
       badge.textContent = "不可用";
+      panelBadge.textContent = "不可用";
       meta.textContent = err.message || "健康检查失败";
     }
   }
@@ -1009,6 +1266,8 @@
         ? "粘贴知乎链接或分享文案…"
         : platform === "toutiao"
           ? "粘贴今日头条链接或分享文案…"
+          : platform === "x"
+            ? "粘贴 X / Twitter 状态页或文章页链接…"
           : platform === "github"
             ? "粘贴 GitHub 仓库链接、owner/repo 或 GitHub 标题…"
           : "粘贴文章链接或整段分享文案…";
@@ -1018,7 +1277,9 @@
     if (platform === "wechat") return "微信";
     if (platform === "zhihu") return "知乎";
     if (platform === "toutiao") return "头条";
+    if (platform === "x") return "X";
     if (platform === "github") return "GitHub";
+    if (platform === "batch") return "批量";
     return "未知";
   }
 
@@ -1301,6 +1562,9 @@
     currentPreviewMarkdown = "";
     currentAssets = [];
     preferPreviewMarkdown = false;
+    stopTiming();
+    updateElapsed(0);
+    refreshBatchCount();
     document.getElementById("article-title").textContent = "文章结果";
     document.getElementById("article-platform-hint").textContent = "";
     document.getElementById("preview-meta").textContent = "实时阅读预览";
@@ -1327,22 +1591,24 @@
     el.style.display = type === "loading" ? "flex" : "block";
   }
 
-  function startLoadingStatus() {
-    const steps = [
-      "正在解析链接或分享文案…",
-      "正在打开文章页面…",
-      "正在抓取正文内容…",
-      "正在处理图片与排版…",
-      "正在生成 Markdown…"
-    ];
-    let index = 0;
-    showStatus("loading", steps[index]);
+  function startLoadingStatus(total = 1) {
+    loadingMeta = { total, current: 1, url: "" };
+    updateLoadingStatus("正在准备任务…");
 
     if (loadingTimer) clearInterval(loadingTimer);
     loadingTimer = setInterval(() => {
-      index = Math.min(index + 1, steps.length - 1);
-      showStatus("loading", steps[index]);
-    }, 1800);
+      const elapsed = conversionStartedAt ? Math.max(0, (Date.now() - conversionStartedAt) / 1000) : 0;
+      const progress = loadingMeta.total > 1
+        ? `第 ${Math.min(loadingMeta.current, loadingMeta.total)}/${loadingMeta.total} 条`
+        : "单条处理";
+      const tail = loadingMeta.url ? ` · ${loadingMeta.url}` : "";
+      showStatus("loading", `正在处理中 · ${progress} · 已耗时 ${elapsed.toFixed(1)}s${tail}`);
+    }, 300);
+  }
+
+  function updateLoadingStatus(message) {
+    const elapsed = conversionStartedAt ? Math.max(0, (Date.now() - conversionStartedAt) / 1000) : 0;
+    showStatus("loading", `${message} · 已耗时 ${elapsed.toFixed(1)}s`);
   }
 
   function hideStatus() {
