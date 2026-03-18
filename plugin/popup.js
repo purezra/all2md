@@ -2,6 +2,7 @@ const extractButton = document.getElementById('extract-btn');
 const copyButton = document.getElementById('copy-btn');
 const downloadButton = document.getElementById('download-btn');
 const downloadZipButton = document.getElementById('download-zip-btn');
+const themeToggle = document.getElementById('theme-toggle');
 const statusEl = document.getElementById('status');
 const outputEl = document.getElementById('markdown-output');
 const previewEl = document.getElementById('preview-output');
@@ -12,6 +13,8 @@ const heroTitle = document.getElementById('hero-title');
 const sourceTab = document.getElementById('tab-source');
 const previewTab = document.getElementById('tab-preview');
 
+const SUPPORTED_MESSAGE = '当前稳定支持：微信公众号、知乎、今日头条、GitHub README。';
+const THEME_STORAGE_KEY = 'all2md-plugin-theme';
 let currentResult = null;
 
 function setStatus(type, text) {
@@ -47,6 +50,42 @@ function sanitizeAssetName(value, index, blob) {
   const base = (matchedExt ? raw.slice(0, -matchedExt[0].length) : raw) || fallback;
   const safeBase = base.replace(/[^a-z0-9._-]+/gi, '-').replace(/-+/g, '-').replace(/^[-_.]+|[-_.]+$/g, '') || fallback;
   return `${String(index + 1).padStart(3, '0')}-${safeBase}${ext}`;
+}
+
+function getSystemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function updateThemeButton(theme) {
+  themeToggle.textContent = theme === 'dark' ? '亮色' : '暗色';
+  themeToggle.setAttribute('aria-label', theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式');
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  updateThemeButton(theme);
+}
+
+function loadTheme() {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY) || getSystemTheme();
+  } catch (_error) {
+    return getSystemTheme();
+  }
+}
+
+function saveTheme(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_error) {
+    // ignore
+  }
+}
+
+function toggleTheme() {
+  const nextTheme = (document.documentElement.dataset.theme || 'light') === 'dark' ? 'light' : 'dark';
+  applyTheme(nextTheme);
+  saveTheme(nextTheme);
 }
 
 function setView(mode) {
@@ -157,7 +196,7 @@ async function extractCurrentPage() {
     heroTitle.textContent = tab.title || '当前网页';
 
     const response = await sendExtractMessage(tab.id);
-    if (!response?.ok) throw new Error(response?.error || '当前页面暂不支持提取');
+    if (!response?.ok) throw new Error(response?.error || SUPPORTED_MESSAGE);
 
     currentResult = response.result;
     outputEl.value = currentResult.markdown || '';
@@ -177,9 +216,9 @@ async function extractCurrentPage() {
     downloadZipButton.disabled = true;
     outputEl.value = '';
     previewEl.innerHTML = '';
-    platformPill.textContent = '失败';
+    platformPill.textContent = '未支持';
     titleMeta.textContent = '尚无结果';
-    setStatus('error', error.message || '提取失败');
+    setStatus('error', `${error.message || '提取失败'} ${SUPPORTED_MESSAGE}`.trim());
   } finally {
     setBusy(false);
   }
@@ -188,6 +227,7 @@ async function extractCurrentPage() {
 extractButton.addEventListener('click', extractCurrentPage);
 sourceTab.addEventListener('click', () => setView('source'));
 previewTab.addEventListener('click', () => setView('preview'));
+themeToggle.addEventListener('click', toggleTheme);
 
 copyButton.addEventListener('click', async () => {
   if (!currentResult?.markdown) return;
@@ -220,4 +260,5 @@ getActiveTab().then(tab => {
   heroTitle.textContent = tab?.title || '当前网页';
 }).catch(() => {});
 
+applyTheme(loadTheme());
 setView('source');

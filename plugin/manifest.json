@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "All2MD Current Page",
-  "version": "0.1.0",
-  "description": "Extract the current article page into Markdown and download it directly from Chrome.",
+  "name": "All2MD Article Markdown",
+  "short_name": "All2MD",
+  "version": "0.2.0",
+  "description": "Convert the current article page into Markdown with local preview and ZIP export.",
+  "minimum_chrome_version": "114",
   "permissions": [
     "activeTab",
     "tabs",
@@ -10,9 +12,6 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://x.com/*",
-    "https://twitter.com/*",
-    "https://*.twimg.com/*",
     "https://github.com/*",
     "https://raw.githubusercontent.com/*",
     "https://*.githubusercontent.com/*",
@@ -46,8 +45,6 @@
   "content_scripts": [
     {
       "matches": [
-        "https://x.com/*",
-        "https://twitter.com/*",
         "https://github.com/*",
         "https://mp.weixin.qq.com/*",
         "https://www.zhihu.com/*",
