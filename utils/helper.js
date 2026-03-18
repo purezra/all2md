@@ -119,6 +119,41 @@ function hasStructuralContent($, el) {
   return $(el).children("table, pre, figure, img, video, iframe").length > 0;
 }
 
+function hasOnlyStrongChild($, el) {
+  const $el = $(el);
+  const children = $el.children();
+  if (children.length !== 1) return false;
+  if (!["strong", "b"].includes(children[0].tagName)) return false;
+
+  const hasLooseText = $el.contents().toArray().some(node => {
+    if (node.type !== "text") return false;
+    return Boolean((node.data || "").trim());
+  });
+
+  return !hasLooseText;
+}
+
+function looksLikeSectionHeading(text) {
+  const value = (text || "").replace(/\s+/g, " ").trim();
+  if (!value || value.length > 32) return false;
+
+  return (
+    /^\d{1,2}$/.test(value) ||
+    /^\d{1,2}[.、．：:]\s*\S+/.test(value) ||
+    /^[一二三四五六七八九十百]+[、.．：:]?\s*\S*$/.test(value) ||
+    /^第[\d一二三四五六七八九十百]+[章节部分篇]/.test(value)
+  );
+}
+
+function normalizeTitleText(value) {
+  return String(value || "")
+    .replace(/\*\*/g, "")
+    .replace(/[*_`~]/g, "")
+    .replace(/\[[^\]]*\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function inferCalloutType(text, className) {
   const value = `${className} ${text}`.toLowerCase();
   if (/warning|warn|caution|风险|注意|警告|谨慎|避坑/.test(value)) return "warning";
@@ -209,6 +244,18 @@ function normalizeRichContent($) {
     if (align === "center" || align === "right") {
       $(el).attr("data-md-align", align);
     }
+  });
+
+  // 微信等平台常把章节标题做成“单独一行的粗体文本”，转成标题比保留为 **文本** 更符合阅读体验
+  $("p, div").each((_, el) => {
+    if (hasCalloutAncestor($, el)) return;
+    if (hasStructuralContent($, el)) return;
+    if (!hasOnlyStrongChild($, el)) return;
+
+    const text = $(el).text().replace(/\s+/g, " ").trim();
+    if (!looksLikeSectionHeading(text)) return;
+
+    $(el).replaceWith(`<h2>${text}</h2>`);
   });
 
   // 图片标题常见于 figure / figcaption 或图片后紧邻说明文字
@@ -415,6 +462,15 @@ function buildTurndown() {
         .split("\n")
         .map(line => line.trim())
         .filter(Boolean);
+
+      const normalizedTitle = normalizeTitleText(title);
+      if (lines.length > 0 && normalizeTitleText(lines[0]) === normalizedTitle) {
+        lines.shift();
+      }
+
+      if (!lines.length) {
+        return `\n\n> ${icon} ${title}\n\n`;
+      }
 
       return `\n\n> ${icon} ${title}\n${lines.map(line => `> ${line}`).join("\n")}\n\n`;
     }

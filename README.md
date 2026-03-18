@@ -1,6 +1,6 @@
 # 文章转 Markdown 工具
 
-> 支持微信公众号 & 知乎文章一键转换为 Markdown，自动下载图片到本地。
+> 支持微信公众号、知乎、今日头条、X/Twitter 以及 GitHub 仓库 README 一键转换为 Markdown，自动下载图片到本地。
 
 ## 快速启动
 
@@ -92,7 +92,10 @@ article-to-md/
 ├── converters/
 │   ├── index.js           # 平台路由
 │   ├── wechat.js          # 微信解析器
-│   └── zhihu.js           # 知乎解析器
+│   ├── zhihu.js           # 知乎解析器
+│   ├── toutiao.js         # 头条解析器
+│   ├── x.js               # X / Twitter 解析器
+│   └── github.js          # GitHub README 解析器
 ├── utils/
 │   └── helper.js          # 图片下载 + Turndown 配置
 ├── public/
@@ -107,6 +110,8 @@ article-to-md/
 - 图片存储在 `downloads/images/`，重启服务不会丢失
 - 服务器如无 GUI，Puppeteer 使用 `headless: new` 模式，无需桌面环境
 - 知乎抓取稳定性强依赖登录态和浏览器会话，推荐用独立 Chrome profile 常驻登录
+- X 帖子优先走公开数据源，失败时回退到浏览器提取；受可见性、地域或登录态影响时可能失败
+- GitHub 仅支持公开仓库；可直接粘贴仓库 URL、`owner/repo` 或浏览器标题文本（如 `GitHub - owner/repo: desc`）
 
 ## API 调用
 
